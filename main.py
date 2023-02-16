@@ -2,7 +2,7 @@ import socket
 import threading
 import sys
 import os
-# TODO: track number of messages, track clients left, server command to list current users, server command to show stats of messages, make sure client joins viable channel
+# TODO: track number of messages, track clients left
 class Client:
     def __init__(self, conn):
         self.conn = conn
@@ -39,6 +39,7 @@ def server_runner(server):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     print("\nHost name: ", socket.gethostname())
+    print("---------------------------------\n")
     server_socket.bind((socket.gethostname(),server.PORT))
     server_socket.listen(25)
 
@@ -55,7 +56,7 @@ def server_runner(server):
         current_client = Client(conn)
         server.clients.append(current_client)
 
-        current_client.thread = threading.Thread(target=client_runner, args=(current_client, server.clients,), daemon=True)
+        current_client.thread = threading.Thread(target=client_runner, args=(current_client, server,), daemon=True)
         current_client.thread.start()
     
     # Shutdown and close connection to end server
@@ -64,16 +65,33 @@ def server_runner(server):
     return
 
 
-def client_runner(current_client, client_list):
+def client_runner(current_client, server):
     # Get name and desired channel from client
     current_client.conn.send("Enter username: ".encode())
     current_client.name = current_client.conn.recv(1024).decode()
 
-    current_client.conn.send("Enter channel to enter: ".encode())
-    current_client.channel = current_client.conn.recv(1024).decode()
+    tmp_str = "Channels available\n"
+    for i in range(1, server.max_channels+1):
+        tmp_str += f'{i} '
+    tmp_str += "\nSelect one of the above channels: "
+
+    current_client.conn.send(tmp_str.encode())
+
+    # Have client choose channel
+    while True:
+        selected_channel = current_client.conn.recv(1024).decode().rstrip()
+
+        # Set channel
+        if(selected_channel.isdigit() and int(selected_channel) < server.max_channels and int(selected_channel) > 0):
+            current_client.channel = selected_channel
+            break
+        current_client.conn.send("That channel isn't available...\n".encode())
+
+    # Tell client they've connected
+    current_client.conn.send(f"You've connected to channel {current_client.channel}\n".encode())
 
     # Tell admin who connected
-    print(current_client.name.rstrip(), "connected to channel", current_client.channel)
+    print(current_client.name.rstrip(), "connected to channel", current_client.channel, "\n")
 
     # Recieve and dessiminate client messages
     while True:
@@ -83,7 +101,7 @@ def client_runner(current_client, client_list):
             break
 
         # Send message to everyone on same channel except self
-        for cl in client_list:
+        for cl in server.clients:
             if cl.conn is current_client.conn:
                 continue
             if cl.channel == current_client.channel:
@@ -111,13 +129,28 @@ def main():
 
     server_thread.start()
 
-    print("\nType 'exit' to stop chat server")
+    print("Commands:\n'exit' - ends chat server\n'list' - show list of connected users\n'stats' - show messaging statistics")
     while True:
+        # Server Admin input
         try:
             command = input()
+
             if command == "exit":
                 server_object.end_server(server_thread)
                 return 0
+            elif command == "list":
+                client_list = server_object.clients
+
+                if(len(client_list) == 0):
+                    print("There are no users connected...")
+                else:
+                    for i in range(1, len(client_list)+1):
+                        print(f'{i} {client_list[i-1].name.rstrip()}')
+            elif command == "stats":
+                print("Messages forwarded: ", server_object.msg_sent)
+                print("Messages recieved: ", server_object.msg_recv)
+            print(" ")
+
         except KeyboardInterrupt:
                 server_object.end_server(server_thread)
                 return 0
