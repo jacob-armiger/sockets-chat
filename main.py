@@ -2,18 +2,13 @@ import socket
 import threading
 import sys
 import os
-# TODO: track number of messages, track clients left
+
 class Client:
     def __init__(self, conn):
         self.conn = conn
         self.thread = None
         self.name = None
         self.channel = None
-    
-    # def send(self, string):
-    #     self.conn.send(string.encode())
-    # def recv(self, size):
-    #     self.conn.recv(size).decode()
 
 class Server:
     def __init__(self):
@@ -29,13 +24,13 @@ class Server:
 
     def end_server(self, server_thread):
         self.running = False
-        # Server thread may be waiting for connection so make throwaway connection
+        # Server thread may be waiting for connection, so make throwaway connection
         os.system(f'nc {socket.gethostname()} {self.PORT}')
         # Wait for server thread to end
         server_thread.join()
         return
 
-# TODO: track number of messages, 
+
 def server_runner(server):
     # Set up server socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
