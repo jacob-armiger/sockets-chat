@@ -20,6 +20,8 @@ class Server:
         self.clients = []
         self.msg_recv = 0
         self.msg_sent = 0
+        self.bytes_sent = 0
+        self.bytes_recv = 0
 
         self.PORT = 0
         self.max_channels = 0
@@ -33,7 +35,7 @@ class Server:
         server_thread.join()
         return
 
-
+# TODO: track number of messages, 
 def server_runner(server):
     # Set up server socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -91,13 +93,22 @@ def client_runner(current_client, server):
     current_client.conn.send(f"You've connected to channel {current_client.channel}\n".encode())
 
     # Tell admin who connected
+
     print(current_client.name.rstrip(), "connected to channel", current_client.channel, "\n")
+
 
     # Recieve and dessiminate client messages
     while True:
-        msg = current_client.conn.recv(1024).decode()
-        if not msg: 
-            print("client left?")
+        try:
+            msg = current_client.conn.recv(1024).decode()
+            #update msg count
+            server.msg_recv = server.msg_recv + 1
+            server.bytes_recv = server.bytes_recv + len(msg)
+            print(f"received: {server.bytes_recv} bytes")
+        except:
+            #remove client from client list
+            server.clients.remove(current_client)
+            print(f"Active Clients: {len(server.clients)}")
             break
 
         # Send message to everyone on same channel except self
@@ -105,9 +116,14 @@ def client_runner(current_client, server):
             if cl.conn is current_client.conn:
                 continue
             if cl.channel == current_client.channel:
-                cl.conn.sendall(msg.encode())
+                #message is sent, update counter
+                encoded_msg = msg.encode()
+                server.msg_sent = server.msg_sent + 1
+                server.bytes_sent = server.bytes_sent + len(encoded_msg)
+                print(f"Sent: {server.bytes_sent} bytes")
+                cl.conn.sendall(encoded_msg)
+                
     return
-
 
 def main():
     PORT = 0
