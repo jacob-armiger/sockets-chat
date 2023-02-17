@@ -2,18 +2,13 @@ import socket
 import threading
 import sys
 import os
-# TODO: track number of messages, track clients left
+
 class Client:
     def __init__(self, conn):
         self.conn = conn
         self.thread = None
         self.name = None
         self.channel = None
-    
-    # def send(self, string):
-    #     self.conn.send(string.encode())
-    # def recv(self, size):
-    #     self.conn.recv(size).decode()
 
 class Server:
     def __init__(self):
@@ -29,13 +24,13 @@ class Server:
 
     def end_server(self, server_thread):
         self.running = False
-        # Server thread may be waiting for connection so make throwaway connection
+        # Server thread may be waiting for connection, so make throwaway connection
         os.system(f'nc {socket.gethostname()} {self.PORT}')
         # Wait for server thread to end
         server_thread.join()
         return
 
-# TODO: track number of messages, 
+
 def server_runner(server):
     # Set up server socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -163,8 +158,8 @@ def main():
                     for i in range(1, len(client_list)+1):
                         print(f'{i} {client_list[i-1].name.rstrip()}')
             elif command == "stats":
-                print("Messages forwarded: ", server_object.msg_sent)
-                print("Messages recieved: ", server_object.msg_recv)
+                print("Messages forwarded by server: ", server_object.msg_sent)
+                print("Messages recieved by server: ", server_object.msg_recv)
             print(" ")
 
         except KeyboardInterrupt:
