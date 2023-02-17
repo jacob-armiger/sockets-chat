@@ -158,8 +158,8 @@ def main():
                     for i in range(1, len(client_list)+1):
                         print(f'{i} {client_list[i-1].name.rstrip()}')
             elif command == "stats":
-                print("Messages forwarded: ", server_object.msg_sent)
-                print("Messages recieved: ", server_object.msg_recv)
+                print("Messages forwarded by server: ", server_object.msg_sent)
+                print("Messages recieved by server: ", server_object.msg_recv)
             print(" ")
 
         except KeyboardInterrupt:
