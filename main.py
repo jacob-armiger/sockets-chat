@@ -84,7 +84,7 @@ def client_runner(current_client, server):
         selected_channel = current_client.conn.recv(1024).decode().rstrip()
 
         # Set channel
-        if(selected_channel.isdigit() and int(selected_channel) < server.max_channels and int(selected_channel) > 0):
+        if(selected_channel.isdigit() and int(selected_channel) <= server.max_channels and int(selected_channel) > 0):
             current_client.channel = selected_channel
             break
         current_client.conn.send("That channel isn't available...\n".encode())
@@ -93,36 +93,36 @@ def client_runner(current_client, server):
     current_client.conn.send(f"You've connected to channel {current_client.channel}\n".encode())
 
     # Tell admin who connected
-
     print(current_client.name.rstrip(), "connected to channel", current_client.channel, "\n")
-
 
     # Recieve and dessiminate client messages
     while True:
         try:
             msg = current_client.conn.recv(1024).decode()
+
+            if not msg:
+                # Remove client from list
+                server.clients.remove(current_client)
+                break
+
             #update msg count
             server.msg_recv = server.msg_recv + 1
             server.bytes_recv = server.bytes_recv + len(msg)
-            print(f"received: {server.bytes_recv} bytes")
         except:
-            #remove client from client list
-            server.clients.remove(current_client)
-            print(f"Active Clients: {len(server.clients)}")
             break
 
+        # Show username in message
+        msg = f'{current_client.name.rstrip()}: {msg}'
         # Send message to everyone on same channel except self
         for cl in server.clients:
             if cl.conn is current_client.conn:
                 continue
             if cl.channel == current_client.channel:
-                #message is sent, update counter
+                # send msg, update counter
                 encoded_msg = msg.encode()
                 server.msg_sent = server.msg_sent + 1
                 server.bytes_sent = server.bytes_sent + len(encoded_msg)
-                print(f"Sent: {server.bytes_sent} bytes")
-                cl.conn.sendall(encoded_msg)
-                
+                cl.conn.sendall(encoded_msg)         
     return
 
 def main():
