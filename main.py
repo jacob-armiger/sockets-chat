@@ -35,6 +35,7 @@ class Server:
 def server_runner(server):
     # Set up server socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     print("\nHost: ", socket.gethostbyname(socket.gethostname()))
     print("---------------------------------\n")
@@ -58,8 +59,7 @@ def server_runner(server):
         current_client.thread.start()
     
     # Shutdown and close connection to end server
-    conn.shutdown(0)
-    conn.close()
+    server_socket.close()
     return
 
 
@@ -123,7 +123,8 @@ def client_runner(current_client, server):
                 encoded_msg = msg.encode()
                 server.msg_sent = server.msg_sent + 1
                 server.bytes_sent = server.bytes_sent + len(encoded_msg)
-                cl.conn.sendall(encoded_msg)         
+                cl.conn.sendall(encoded_msg)  
+    current_client.conn.close()       
     return
 
 def main():
