@@ -4,8 +4,9 @@ import sys
 import os
 
 class Client:
-    def __init__(self, conn):
+    def __init__(self,conn,addr):
         self.conn = conn
+        self.addr = addr
         self.thread = None
         self.name = None
         self.channel = None
@@ -25,7 +26,7 @@ class Server:
     def end_server(self, server_thread):
         self.running = False
         # Server thread may be waiting for connection, so make throwaway connection
-        os.system(f'nc {socket.gethostname()} {self.PORT}')
+        os.system(f'nc {socket.gethostbyname(socket.gethostname())} {self.PORT}')
         # Wait for server thread to end
         server_thread.join()
         return
@@ -35,9 +36,9 @@ def server_runner(server):
     # Set up server socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    print("\nHost name: ", socket.gethostname())
+    print("\nHost: ", socket.gethostbyname(socket.gethostname()))
     print("---------------------------------\n")
-    server_socket.bind((socket.gethostname(),server.PORT))
+    server_socket.bind((socket.gethostbyname(socket.gethostname()),server.PORT))
     server_socket.listen(25)
 
     while server.running:
@@ -50,7 +51,7 @@ def server_runner(server):
 
 
         # Add client to list and start client thread
-        current_client = Client(conn)
+        current_client = Client(conn, address)
         server.clients.append(current_client)
 
         current_client.thread = threading.Thread(target=client_runner, args=(current_client, server,), daemon=True)
@@ -65,7 +66,12 @@ def server_runner(server):
 def client_runner(current_client, server):
     # Get name and desired channel from client
     current_client.conn.send("Enter username: ".encode())
-    current_client.name = current_client.conn.recv(1024).decode()
+    given_name = current_client.conn.recv(1024).decode()
+
+    if given_name == "\n":
+        current_client.name = current_client.addr[0]
+    else:
+        current_client.name = given_name
 
     tmp_str = "Channels available\n"
     for i in range(1, server.max_channels+1):
@@ -90,7 +96,7 @@ def client_runner(current_client, server):
     # Tell admin who connected
     print(current_client.name.rstrip(), "connected to channel", current_client.channel, "\n")
 
-    # Recieve and dessiminate client messages
+    # Recieve and desseminate client messages
     while True:
         try:
             msg = current_client.conn.recv(1024).decode()
