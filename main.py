@@ -28,7 +28,7 @@ class Server:
         # Server thread may be waiting for connection, so make throwaway connection
         os.system(f'nc {socket.gethostbyname(socket.gethostname())} {self.PORT}')
         # Wait for server thread to end
-        server_thread.join()
+        # server_thread.join()
         return
 
 
@@ -38,6 +38,7 @@ def server_runner(server):
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     print("\nHost: ", socket.gethostbyname(socket.gethostname()))
+    print("Clients connect to host via netcat command")
     print("---------------------------------\n")
     server_socket.bind((socket.gethostbyname(socket.gethostname()),server.PORT))
     server_socket.listen(25)
@@ -147,7 +148,7 @@ def main():
 
     server_thread.start()
 
-    print("Commands:\n'exit' - ends chat server\n'list' - show list of connected users\n'stats' - show messaging statistics")
+    print("Commands:\n'exit' - ends chat server (or Ctrl+c)\n'list' - show list of connected users\n'stats' - show messaging statistics")
     while True:
         # Server Admin input
         try:
